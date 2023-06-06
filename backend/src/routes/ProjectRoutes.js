@@ -5,13 +5,43 @@ const ProjectRouter = express.Router();
 
 // Get all projects
 ProjectRouter.get("/project", async (req, res) => {
+  const search = req.query.search || ""; // Get the query parameter value
+  const page = req.query.page || 1;
+  const sort = req.query.sort || ""; // Get the sort query parameter value
+  const ITEM_PER_PAGE = 7;
+  let query = {};
+  if (search !== "") {
+    query.Status = { $regex: search, $options: "i" };
+  }
   try {
-    const projects = await ProjectModel.find();
-    res.send(projects);
+    const skip = (page - 1) * ITEM_PER_PAGE;
+    let count = await ProjectModel.countDocuments(query);
+
+    let sortQuery = {};
+    if (sort !== "") {
+      const [field, order] = sort.split(":");
+      sortQuery[field] = order === "asc" ? 1 : -1;
+    }
+
+    const projects = await ProjectModel.find(query)
+      .sort(sortQuery)
+      .limit(ITEM_PER_PAGE)
+      .skip(skip);
+
+    const pageCount = Math.ceil(count / ITEM_PER_PAGE);
+
+    return res.status(200).json({
+      projects,
+      pagination: {
+        count,
+        pageCount,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ error: "Unable to fetch projects" });
+    return res.status(500).json({ error: "Unable to fetch projects" });
   }
 });
+
 
 // Create a new project
 ProjectRouter.post("/project/create", async (req, res) => {
@@ -20,7 +50,9 @@ ProjectRouter.post("/project/create", async (req, res) => {
     const project = new ProjectModel(payload);
     await project.save();
     res.json({ message: "Project created successfully" });
+    console.log(res)
   } catch (error) {
+    console.log(error)
     res.status(500).json({ error: "Unable to create project" });
   }
 });
@@ -37,6 +69,7 @@ ProjectRouter.patch("/statusrun/:id", async (req, res) => {
 
 // Update project status to "Closed"
 ProjectRouter.patch("/statusclose/:id", async (req, res) => {
+  console.log(req.params.id);
   try {
     const updatedData = await updateProjectStatus(req.params.id, "Closed");
     res.json(updatedData || { error: "Project not found" });
@@ -56,54 +89,60 @@ ProjectRouter.patch("/statuscancel/:id", async (req, res) => {
 });
 
 // Get total number of projects
-ProjectRouter.get("/totalprojects", async (req, res) => {
+ProjectRouter.get("/projectinfo", async (req, res) => {
   try {
     const totalCount = await ProjectModel.countDocuments();
-    res.json({ totalProjects: totalCount });
+    const canceledCount = await ProjectModel.countDocuments({ Status: 'Cancelled' });
+    const runningCount = await ProjectModel.countDocuments({ Status: 'Running' });
+    const closedCount = await ProjectModel.countDocuments({ Status: 'Closed' });
+    const registeredCount = await ProjectModel.countDocuments({ Status: 'Registered' });
+    const currentDate = new Date();
+    const delayedRunningCount = await ProjectModel.countDocuments({
+      Status: 'Running',
+      Enddate: { $lt: currentDate },
+    });
+    return res.status(200).json({
+      total: totalCount,
+      cancel: canceledCount,
+      running: runningCount,
+      registered: registeredCount,
+      closed: closedCount,
+      delayedRunning: delayedRunningCount,
+    });
   } catch (error) {
     res.status(500).json({ error: "Unable to fetch total projects" });
   }
 });
 
-// Get number of canceled projects
-ProjectRouter.get("/canceledproject", async (req, res) => {
+ProjectRouter.get("/dashboardchart", async (req, res) => {
   try {
-    const canceledCount = await ProjectModel.countDocuments({ Status: "Cancelled" });
-    res.json({ canceledProject: canceledCount });
+    const pipeline = [
+      {
+        $group: {
+          _id: "$Department",
+          registeredCount: { $sum: 1 },
+          closedCount: { $sum: { $cond: [{ $eq: ["$Status", "Closed"] }, 1, 0] } },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          department: "$_id",
+          registeredCount: 1,
+          closedCount: 1,
+          successPercentage: { $multiply: [{ $divide: ["$closedCount", "$registeredCount"] }, 100] },
+        },
+      },
+    ];
+
+    const departmentStats = await ProjectModel.aggregate(pipeline);
+
+    return res.status(200).json(departmentStats);
   } catch (error) {
-    res.status(500).json({ error: "Unable to fetch canceled projects" });
+    res.status(500).json({ error: "Unable to fetch department stats" });
   }
 });
 
-// Get number of running projects
-ProjectRouter.get("/runningproject", async (req, res) => {
-  try {
-    const runningCount = await ProjectModel.countDocuments({ Status: "Running" });
-    res.json({ runningProject: runningCount });
-  } catch (error) {
-    res.status(500).json({ error: "Unable to fetch running projects" });
-  }
-});
-
-// Get number of closed projects
-ProjectRouter.get("/closedproject", async (req, res) => {
-  try {
-    const closedCount = await ProjectModel.countDocuments({ Status: "Closed" });
-    res.json({ closedProject: closedCount });
-  } catch (error) {
-    res.status(500).json({ error: "Unable to fetch closed projects" });
-  }
-});
-
-// Get number of registered projects
-ProjectRouter.get("/registeredproject", async (req, res) => {
-  try {
-    const registeredCount = await ProjectModel.countDocuments({ Status: "Registered" });
-    res.json({ registeredProject: registeredCount });
-  } catch (error) {
-    res.status(500).json({ error: "Unable to fetch registered projects" });
-  }
-});
 
 // Helper function to update project status
 async function updateProjectStatus(id, status) {
