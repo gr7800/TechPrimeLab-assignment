@@ -16,7 +16,7 @@ export const login = (creds) => async (dispatch) => {
     if (!data.error) {
       dispatch({ type: LOGIN_SUCCESS, payload: data })
     } else {
-      dispatch({ type: LOGIN_ERROR, payload: data })
+      dispatch({ type: LOGIN_ERROR, payload: data.error })
     }
     return data;
   }
@@ -27,10 +27,8 @@ export const login = (creds) => async (dispatch) => {
 }
 
 
-const authlogout = () => {
-  localStorage.removeItem("user");
-  localStorage.removeItem("token");
-  window.location.reload();
+const authlogout = () => async (dispatch) => {
+  dispatch({ type: LOGIN_ERROR, payload: "Logout Successfull!" })
 }
 
 export default authlogout;

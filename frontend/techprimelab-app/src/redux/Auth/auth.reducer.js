@@ -2,7 +2,7 @@ import { LOGIN_ERROR, LOGIN_REQUEST, LOGIN_SUCCESS, LOGOUT } from "./auth.types"
 
 let token = localStorage.getItem("user");
 const intialState = {
-    isAuth: false,
+    isAuth: true,
     token: token,
     data: [],
     loading: false,
@@ -23,10 +23,10 @@ export const authReducer = (state = intialState, { type, payload }) => {
             return {
                 ...state,
                 isAuth: true,
-                token:payload.token,
+                token: payload.token,
                 loading: false,
                 error: false,
-                message:"Login Successfull"
+                message: "Login Successfull"
             }
         }
         case LOGIN_ERROR: {
@@ -36,7 +36,7 @@ export const authReducer = (state = intialState, { type, payload }) => {
                 isAuth: false,
                 loading: false,
                 error: true,
-                message: payload.error
+                message: payload
             }
         }
 
@@ -44,8 +44,8 @@ export const authReducer = (state = intialState, { type, payload }) => {
             return {
                 ...state,
                 isAuth: false,
-                token:"",
-                message:"",
+                token: "",
+                message: "",
             }
         }
         default: {

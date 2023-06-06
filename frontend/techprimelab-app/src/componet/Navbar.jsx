@@ -5,10 +5,18 @@ import projectlistactive from "../utills/Project-list-active.svg"
 import projectlist from "../utills/Project-list.svg"
 import createProjectactive from "../utills/create-project-active.svg"
 import createProject from "../utills/create-project.svg"
+import logouticon from "../utills/Logout.svg"
 import { Link, useLocation } from "react-router-dom"
+import { useDispatch, useSelector } from 'react-redux';
+import authlogout from '../redux/Auth/auth.action';
 
 const Navbar = () => {
     const location = useLocation();
+    const isAuth = useSelector((store) => store.authReducer.isAuth);
+    const dispatch = useDispatch();
+    const handleLogout = () => {
+        dispatch(authlogout());
+    }
     return (
         <Flex
             direction={{ base: 'row', md: 'column' }} // Set direction to row on smaller screens, column on larger screens
@@ -28,7 +36,7 @@ const Navbar = () => {
             <Flex direction={{ base: 'row', md: 'column' }} gap={"50px"} rowGap={"50px"} align="center">
                 <Link to="/">
                     <Box mb={4}>
-                        <img src={location.pathname==="/"?dashboardactive:dashboardicon} alt="Dashboard" />
+                        <img src={location.pathname === "/" ? dashboardactive : dashboardicon} alt="Dashboard" />
                     </Box>
                 </Link>
                 <Link to="/list">
@@ -38,9 +46,12 @@ const Navbar = () => {
                 </Link>
                 <Link to="/add-project">
                     <Box mb={4}>
-                        <img src={location.pathname==="/add-project"?createProjectactive:createProject} alt="Add Project" />
+                        <img src={location.pathname === "/add-project" ? createProjectactive : createProject} alt="Add Project" />
                     </Box>
                 </Link>
+                {isAuth && (<Box mb={4} onClick={handleLogout}>
+                    <img src={logouticon} alt="logout" />
+                </Box>)}
             </Flex>
         </Flex>
     );
