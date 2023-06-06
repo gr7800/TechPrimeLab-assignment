@@ -20,13 +20,14 @@ const Navbar = () => {
     return (
         <Flex
             direction={{ base: 'row', md: 'column' }} // Set direction to row on smaller screens, column on larger screens
-            bg="gray.800"
+            bg={"whiteAlpha.400"}
             h={{ base: '50px', md: '100vh' }} // Set height to 50px on smaller screens, full height on larger screens
             w={{ base: '100%', md: '80px' }} // Set width to 100% on smaller screens, 80px on larger screens
             justify="center"
             align="center"
-            color="white"
+            color="gray"
             position="fixed"
+            style={{"box-shadow": "rgba(0, 0, 0, 0.35) 0px 5px 15px"}}
             left={0}
             bottom={0}
             mt={{ base: '0', md: '0', lg: '0', xl: '0', '2xl': '80px' }}

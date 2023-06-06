@@ -2,7 +2,7 @@ import { LOGIN_ERROR, LOGIN_REQUEST, LOGIN_SUCCESS, LOGOUT } from "./auth.types"
 
 let token = localStorage.getItem("user");
 const intialState = {
-    isAuth: true,
+    isAuth: false,
     token: token,
     data: [],
     loading: false,
