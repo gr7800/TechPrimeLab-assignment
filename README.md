@@ -1,5 +1,7 @@
 # TechPrimeLab-assignment
 
+#### Login Email and Passwrd : <gt29015@gmail.com> <12345>
+
 ## Project Management API
 
 This is a Node.js-based API for managing user authentication and project management.
